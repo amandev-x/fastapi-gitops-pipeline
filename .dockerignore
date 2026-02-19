@@ -1,15 +1,47 @@
+# Git
 .git
 .gitignore
-__pycache__
+
+# Python cache
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
-env
-.env
-venv
-.venv 
-node_modules
-tests
+*.py[cod]
+
+# Virtual environments (match anywhere)
+**/venv/
+**/env/
+**/.venv/
+**/.env/
+venv/
+env/
+.venv/
+.env/
+
+# Testing
+**/.pytest_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+
+# Node (if any)
+node_modules/
+
+# Logs
 *.log
-dist
-build
+
+# Build artifacts
+dist/
+build/
+
+# CI/CD
+Jenkinsfile
+jenkins/
+
+# Kubernetes
+k8s/
+
+# Documentation
+README.md
