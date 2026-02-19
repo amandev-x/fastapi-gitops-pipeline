@@ -17,6 +17,8 @@ pipeline {
                 echo 'Running Tests'
                 sh '''
                 cd app 
+                python3 -m venv venv 
+                . venv/bin/activate
                 pip3 install -r requirements.txt
                 pytest test_main.py -v
                 '''
