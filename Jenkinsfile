@@ -32,4 +32,14 @@ pipeline {
             }
         }
     }
+
+    post {
+        always {
+            echo "Cleaning up test artifacts"
+            sh '''
+            rm -rf app/venv 
+            rm -rf app/__pycache__
+            rm -rf app/test/__pycache__
+            '''
+        }
 }
