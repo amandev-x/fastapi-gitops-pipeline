@@ -42,4 +42,5 @@ pipeline {
             rm -rf app/test/__pycache__
             '''
         }
+    }
 }
