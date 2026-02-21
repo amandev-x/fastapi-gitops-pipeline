@@ -45,7 +45,7 @@ pipeline {
             steps {
                 echo "Pushing docker image with tag: ${IMAGE_TAG}"
                 script {
-                    docker.withRegistry('', 'dockerhub') {
+                    docker.withRegistry('', 'dockerhub-credentials') {
                         sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
                         sh "docker push ${DOCKER_IMAGE}:latest"
                     }
