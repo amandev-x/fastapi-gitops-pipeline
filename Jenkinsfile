@@ -24,11 +24,32 @@ pipeline {
                 '''
             }
         }
+        stage('Cleanup Test environment') {
+            steps {
+                echo "Cleaning up test artifacts"
+                sh '''
+                rm -rf app/venv 
+                rm -rf app/__pycache__
+                rm -rf app/test/__pycache__
+                '''
+            }
+        }
         stage("Build Docker Image") {
             steps {
                 echo "Building docker image with tag: ${IMAGE_TAG}"
                 sh 'docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} .'
                 sh 'docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest'
+            }
+        }
+        stage("Push to Docker Hub") {
+            steps {
+                echo "Pushing docker image with tag: ${IMAGE_TAG}"
+                script {
+                    docker.withRegistry('', 'dockerhub') {
+                        sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                        sh "docker push ${DOCKER_IMAGE}:latest"
+                    }
+                }
             }
         }
     }
