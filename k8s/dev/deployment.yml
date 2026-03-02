@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: fastapi-app
+  namespace: dev 
+  labels:
+    app: fastapi-app
+    env: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastapi-app
+  template:
+    metadata:
+      labels:
+        app: fastapi-app
+        env: dev
+    spec:
+      containers:
+        - name: fastapi-app
+          image: amandabral9954/fastapi-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ENVIRONMENT
+              value: dev 
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          
