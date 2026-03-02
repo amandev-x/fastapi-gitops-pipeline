@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: fastapi-app
-        image: amandabral9954/fastapi-app:latest
+        image: amandabral9954/fastapi-app:18
         ports:
         - containerPort: 8000
         env:
@@ -43,5 +43,5 @@ spec:
           httpGet:
             path: /health
             port: 8000
-          initialDelaySeconds: 10
+          initialDelaySeconds: 15
           periodSeconds: 5

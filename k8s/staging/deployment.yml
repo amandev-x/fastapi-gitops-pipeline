@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: fastapi-app
-          image: amandabral9954/fastapi-app:latest
+          image: amandabral9954/fastapi-app:18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -38,11 +38,11 @@ spec:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 5
+            initialDelaySeconds: 15
             periodSeconds: 5
