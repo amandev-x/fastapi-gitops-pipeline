@@ -10,8 +10,14 @@ def test_read_root():
     assert "GitOps Pipeline Demo" in response.json()["message"]
 
 def test_health_check():
+    os.environ["FAIL_HEALTH"] = "false"
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "healthy"}
+    assert response.json()["status"] == "healthy"
+
+def test_version_endpoint():
+    response = client.get("/version")
+    assert response.status_code == 200
+    assert "version" in response.json()
 
 

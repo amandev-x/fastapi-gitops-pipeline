@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import os
 
 app = FastAPI(
@@ -8,6 +8,9 @@ app = FastAPI(
 )
 
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "unknown")
+VERSION = os.environ.get("VERSION", "1.0.0")
+FAIL_HEALTH = os.environ.get("FAIL_HEALTH", "false").lower() == "true"
+
 @app.get("/")
 async def read_root():
     return {
@@ -18,4 +21,11 @@ async def read_root():
 
 @app.get("/health")
 async def health_check():
+    if FAIL_HEALTH:
+        raise HTTPException(status_code=503, detail="Service unhealthy")
+    return {"status": "healthy", "version": VERSION}
     return {"status": "healthy"}
+
+@app.get("/version")
+def get_version():
+    return {"version": VERSION}
