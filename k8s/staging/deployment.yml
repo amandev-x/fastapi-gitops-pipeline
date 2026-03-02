@@ -1,0 +1,48 @@
+kind: Deployment 
+apiVersion: apps/v1 
+metadata:
+  name: fastapi-app
+  namespace: staging
+  labels:
+    app: fastapi-app
+    env: staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fastapi-app
+      environment: staging 
+  template:
+    metadata:
+      labels:
+        app: fastapi-app
+        environment: staging
+    spec:
+      containers:
+        - name: fastapi-app
+          image: amandabral9954/fastapi-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ENVIRONMENT
+              value: staging
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "400m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
