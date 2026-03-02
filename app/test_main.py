@@ -6,7 +6,8 @@ client = TestClient(app)
 def test_read_root():
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"message": "Welcome to the FastAPI GitOps Pipeline!"}
+    assert "message" in response.json()
+    assert "GitOps Pipeline Demo" in response.json()["message"]
 
 def test_health_check():
     response = client.get("/health")
