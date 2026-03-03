@@ -144,7 +144,6 @@ pipeline {
                 } else {
                     echo "⚠️  No previous version available to rollback to (this is build #1)"
                 }
-                fi
                 '''
               }
             }
