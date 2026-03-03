@@ -124,30 +124,28 @@ pipeline {
             echo "✅ Deployment successful! Version ${IMAGE_TAG} is healthy and running."
         }
         failure {
-            script {
-                echo "🔴 DEPLOYMENT FAILED! Initiating rollback..."
-                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]){
-                if (env.BUILD_NUMBER.toInteger() > 1) {
+        script {
+            echo "🔴 DEPLOYMENT FAILED! Initiating rollback..."
+            if (env.BUILD_NUMBER.toInteger() > 1) {
+                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh '''
-                      git config user.name "Jenkins CI"
-                      git config user.email "jenkins-ci@local"
-                      
-                      # Only rollback if the file was actually changed to the current BUILD_NUMBER
-                      if grep -q "${DOCKER_IMAGE}:${IMAGE_TAG}" k8s/dev/deployment.yml; then
-                        echo "Reverting image from ${IMAGE_TAG} to ${PREVIOUS_IMAGE_TAG}"
-                        sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${PREVIOUS_IMAGE_TAG}|g" k8s/dev/deployment.yml
-                        
-                        git add k8s/
-                        git commit -m "Rollback to previous version ${PREVIOUS_IMAGE_TAG} due to failed health check" || true
-                        git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
-                        echo "✅ Rollback committed! ArgoCD will sync version ${PREVIOUS_IMAGE_TAG}"
-                      else
-                        echo "⚠️  No previous version available to rollback to"
-                      fi
+                        git config user.name "Jenkins CI"
+                        git config user.email "jenkins-ci@local"
+
+                        if grep -q "${DOCKER_IMAGE}:${IMAGE_TAG}" k8s/dev/deployment.yml; then
+                            echo "Reverting image from ${IMAGE_TAG} to ${PREVIOUS_IMAGE_TAG}"
+                            sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${PREVIOUS_IMAGE_TAG}|g" k8s/dev/deployment.yml
+                            git add k8s/
+                            git commit -m "Rollback to ${PREVIOUS_IMAGE_TAG} due to failed health check" || true
+                            git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
+                            echo "✅ Rollback committed! ArgoCD will sync version ${PREVIOUS_IMAGE_TAG}"
+                        else
+                            echo "⚠️  Image tag not found in deployment.yml, skipping rollback"
+                        fi
                     '''
                 }
             } else {
-            echo "⚠️  No previous version available to rollback"
+                echo "⚠️  No previous version available to rollback to (this is build #1)"
             }
         }
     }
