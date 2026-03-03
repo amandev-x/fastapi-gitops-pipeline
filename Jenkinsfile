@@ -133,7 +133,7 @@ pipeline {
                       git config user.email "jenkins-ci@local"
                       
                       # Only rollback if the file was actually changed to the current BUILD_NUMBER
-                      if grep -q "${DOCKER_IMAGE}:{IMAGE_TAG}" k8s/dev/deployment.yml; then
+                      if grep -q "${DOCKER_IMAGE}:${IMAGE_TAG}" k8s/dev/deployment.yml; then
                         echo "Reverting image from ${IMAGE_TAG} to ${PREVIOUS_IMAGE_TAG}"
                         sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${PREVIOUS_IMAGE_TAG}|g" k8s/dev/deployment.yml
                         
