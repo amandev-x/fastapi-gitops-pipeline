@@ -125,21 +125,27 @@ pipeline {
         failure {
             script {
                 echo "Deployment failed! Rolling back to previous version"
+                withCredentials([usernamePassword('credentialsId': 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]){
                 if (env.BUILD_NUMBER.toInteger() > 1) {
                     sh '''
-                      # Rollback manifests
-                      sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${PREVIOUS_IMAGE_TAG}|g" k8s/dev/deployment.yml
-
                       git config user.name "Jenkins CI"
                       git config user.email "jenkins-ci@local"
-                      git add k8s/
-                      git commit -m "Rollback to previous version ${PREVIOUS_IMAGE_TAG} due to failed health check" || true
-                      git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
-                    '''
-                    echo "Rollback committed. ArgoCD will sync the previous version."
+                      
+                      # Only rollback if the file was actually changed to the current BUILD_NUMBER
+                      if grep -q "${DOCKER_IMAGE}:{IMAGE_TAG}" k8s/dev/deployment.yml; then
+                        echo "Reverting image from ${IMAGE_TAG} to ${PREVIOUS_IMAGE_TAG}"
+                        sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${PREVIOUS_IMAGE_TAG}|g" k8s/dev/deployment.yml
+                        
+                        git add k8s/
+                        git commit -m "Rollback to previous version ${PREVIOUS_IMAGE_TAG} due to failed health check" || true
+                        git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
+                        echo "Rollback committed. ArgoCD will sync the previous version."
                 } else {
                     echo "No previous version to rollback to."
                 }
+                fi
+                '''
+              }
             }
         }
     }
