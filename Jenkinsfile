@@ -100,10 +100,10 @@ pipeline {
                     )
 
                     if (status != 0) {
-                        echo "Rollout failed or timed out!"
+                        echo "❌ Rollout failed or timed out!"
                         error("Deployment unhealthy. The 'failure' block will now trigger rollback.")
                     } else {
-                        echo "SUCCESS: New version is live and healthy in Dev!"
+                        echo "✅ SUCCESS: New version ${IMAGE_TAG} is live and healthy in Dev!"
                     }
                 }
             }
@@ -112,6 +112,7 @@ pipeline {
 
     post {
         always {
+            echo "Pipeline completed"
             echo "Cleaning up test artifacts"
             sh '''
             rm -rf app/venv 
@@ -120,11 +121,11 @@ pipeline {
             '''
         }
         success {
-            echo "Deployment successful! Version ${IMAGE_TAG} is healthy"
+            echo "✅ Deployment successful! Version ${IMAGE_TAG} is healthy and running."
         }
         failure {
             script {
-                echo "Deployment failed! Rolling back to previous version"
+                echo "🔴 DEPLOYMENT FAILED! Initiating rollback..."
                 withCredentials([usernamePassword('credentialsId': 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]){
                 if (env.BUILD_NUMBER.toInteger() > 1) {
                     sh '''
@@ -139,9 +140,9 @@ pipeline {
                         git add k8s/
                         git commit -m "Rollback to previous version ${PREVIOUS_IMAGE_TAG} due to failed health check" || true
                         git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
-                        echo "Rollback committed. ArgoCD will sync the previous version."
+                        echo "✅ Rollback committed! ArgoCD will sync version ${PREVIOUS_IMAGE_TAG}"
                 } else {
-                    echo "No previous version to rollback to."
+                    echo "⚠️  No previous version available to rollback to (this is build #1)"
                 }
                 fi
                 '''
