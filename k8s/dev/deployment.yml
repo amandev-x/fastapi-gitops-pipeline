@@ -34,7 +34,7 @@ spec:
             - name: VERSION
               value: "2.0.0"
             - name: FAIL_HEALTH
-              value: "true"
+              value: "false"
           resources:
             requests:
               memory: "128Mi"
