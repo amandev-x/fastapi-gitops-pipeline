@@ -58,7 +58,7 @@ pipeline {
             steps {
                 echo "Updating Kubernetes manifests with new image tag: ${IMAGE_TAG}"
                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                sh '''
+                sh """
                  # Update image tag in all deployment files
                  sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' k8s/dev/deployment.yml
                  sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' k8s/staging/deployment.yml
@@ -73,9 +73,13 @@ pipeline {
                  git config user.name "Jenkins CI"
                  git config user.email "jenkins-ci@local"
                  git add k8s/ 
-                 git commit -m "Update image tag to ${IMAGE_TAG} [skip ci]" || true
-                 git push https://\\${GIT_USER}:\\${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
-                '''
+                 # Check if there are actual changes before commiting
+                 if [ -n "$(git status --porcelain)"]; then
+                   git commit -m "Update image tag to ${IMAGE_TAG} [skip ci]"
+                   git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gtiops-pipeline.git HEAD:main
+                 else
+                   echo "No changes to commit, skipping push."
+                """
             }
         }
         }
