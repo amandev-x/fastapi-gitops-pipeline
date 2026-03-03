@@ -94,24 +94,16 @@ pipeline {
             steps {
                 script {
                     echo "Checking deployment health..."
-                    def healthCheckPassed = sh(
-                        script: '''
-                         # Check dev environment
-                         for i in {1..10}; do
-                           if curl -f http://localhost:30081/health; then
-                             echo "Health check passed"
-                             exit 0
-                           fi
-                           echo "Attempt $i failed, retrying..."
-                           sleep 5
-                         done
-                         exit 1
-                        ''',
+                    def status = sh(
+                        script: "kubectl rollout status deployment/fastapi-app -n dev --timeout=90s",
                         returnStatus: true
                     )
 
-                    if (healthCheckPassed != 0) {
-                        error("Health check failed! Triggering rollback...")
+                    if (status != 0) {
+                        echo "Rollout failed or timed out!"
+                        error("Deployment unhealthy. The 'failure' block will now trigger rollback.")
+                    } else {
+                        echo "SUCCESS: New version is live and healthy in Dev!"
                     }
                 }
             }
