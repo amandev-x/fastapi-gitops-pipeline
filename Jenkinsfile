@@ -79,6 +79,7 @@ pipeline {
                    git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
                  else
                    echo "No changes to commit, skipping push."
+                 fi
                 '''
             }
         }
