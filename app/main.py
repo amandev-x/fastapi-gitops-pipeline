@@ -9,7 +9,7 @@ app = FastAPI(
 
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "unknown")
 VERSION = os.environ.get("VERSION", "1.0.0")
-FAIL_HEALTH = os.environ.get("FAIL_HEALTH", "false").lower() == "true"
+FAIL_HEALTH = os.environ.get("FAIL_HEALTH", "true").lower() == "true"
 
 @app.get("/")
 async def read_root():
