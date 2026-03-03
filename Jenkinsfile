@@ -58,7 +58,7 @@ pipeline {
             steps {
                 echo "Updating Kubernetes manifests with new image tag: ${IMAGE_TAG}"
                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                sh """
+                sh '''
                  # Update image tag in all deployment files
                  sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' k8s/dev/deployment.yml
                  sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' k8s/staging/deployment.yml
@@ -74,8 +74,8 @@ pipeline {
                  git config user.email "jenkins-ci@local"
                  git add k8s/ 
                  git commit -m "Update image tag to ${IMAGE_TAG} [skip ci]" || true
-                 git push https://\\${GIT_USER}:\\${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git main
-                """
+                 git push https://\\${GIT_USER}:\\${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
+                '''
             }
         }
         }
@@ -137,7 +137,7 @@ pipeline {
                       git config user.email "jenkins-ci@local"
                       git add k8s/
                       git commit -m "Rollback to previous version ${PREVIOUS_IMAGE_TAG} due to failed health check" || true
-                      git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git main
+                      git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
                     '''
                     echo "Rollback committed. ArgoCD will sync the previous version."
                 } else {
