@@ -60,14 +60,14 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                 sh """
                  # Update image tag in all deployment files
-                 sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' k8s/dev/deployment.yml
-                 sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' k8s/staging/deployment.yml
-                 sed -i 's|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g' k8s/prod/deployment.yml
+                 sed -i "s|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g" k8s/dev/deployment.yml
+                 sed -i "s|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g" k8s/staging/deployment.yml
+                 sed -i "s|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g" k8s/prod/deployment.yml
 
                  # Update VERSION env var
-                 sed -i 's|VERSION=.*|VERSION=${IMAGE_TAG}|g' k8s/dev/deployment.yml
-                 sed -i 's|VERSION=.*|VERSION=${IMAGE_TAG}|g' k8s/staging/deployment.yml
-                 sed -i 's|VERSION=.*|VERSION=${IMAGE_TAG}|g' k8s/prod/deployment.yml
+                 sed -i "s|VERSION=.*|VERSION=${IMAGE_TAG}|g" k8s/dev/deployment.yml
+                 sed -i "s|VERSION=.*|VERSION=${IMAGE_TAG}|g" k8s/staging/deployment.yml
+                 sed -i "s|VERSION=.*|VERSION=${IMAGE_TAG}|g" k8s/prod/deployment.yml
 
                  # Commit and push changes
                  git config user.name "Jenkins CI"
