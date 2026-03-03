@@ -141,9 +141,8 @@ pipeline {
                         git commit -m "Rollback to previous version ${PREVIOUS_IMAGE_TAG} due to failed health check" || true
                         git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
                         echo "✅ Rollback committed! ArgoCD will sync version ${PREVIOUS_IMAGE_TAG}"
-                      else {
-                      echo "⚠️  No previous version available to rollback to (this is build #1)"
-                      }
+                      else
+                        echo "⚠️  No previous version available to rollback to"
                       fi
                     '''
                 }
