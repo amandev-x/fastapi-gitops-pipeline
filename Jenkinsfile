@@ -78,6 +78,7 @@ pipeline {
                 """
             }
         }
+        }
         stage("Wait for ArgoCD sync") {
             steps {
                 echo "Waiting for ArgoCD to sync"
