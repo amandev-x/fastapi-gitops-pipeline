@@ -98,7 +98,7 @@ pipeline {
                         script: '''
                          # Check dev environment
                          for i in {1..10}; do
-                           if curl -f http://localhost:30080/health; then
+                           if curl -f http://localhost:30081/health; then
                              echo "Health check passed"
                              exit 0
                            fi
