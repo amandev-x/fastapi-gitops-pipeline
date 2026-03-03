@@ -126,7 +126,7 @@ pipeline {
         failure {
             script {
                 echo "🔴 DEPLOYMENT FAILED! Initiating rollback..."
-                withCredentials([usernamePassword('credentialsId': 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]){
+                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]){
                 if (env.BUILD_NUMBER.toInteger() > 1) {
                     sh '''
                       git config user.name "Jenkins CI"
