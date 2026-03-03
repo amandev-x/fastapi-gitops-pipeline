@@ -128,7 +128,7 @@ pipeline {
                 if (env.BUILD_NUMBER.toInteger() > 1) {
                     sh '''
                       # Rollback manifests
-                      sed -i 's|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${PREVIOUS_IMAGE_TAG}|g' k8s/dev/deployment.yml
+                      sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${PREVIOUS_IMAGE_TAG}|g" k8s/dev/deployment.yml
 
                       git config user.name "Jenkins CI"
                       git config user.email "jenkins-ci@local"
