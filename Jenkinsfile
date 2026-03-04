@@ -77,12 +77,13 @@ pipeline {
                  git config user.email "jenkins-ci@local"
                  git add k8s/ 
                  # Check if there are actual changes before commiting
-                 if [ -n "$(git status --porcelain) "]; then
-                   git commit -m "Update image tag to ${IMAGE_TAG} [skip ci]"
-                   git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
-                 else
-                   echo "No changes to commit, skipping push."
-                 fi
+                 if ! git diff --quiet; then
+                 echo "Changes detected, committing..."
+                git commit -m "Update image tag to ${IMAGE_TAG} [skip ci]"
+                git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
+                else
+                  echo "No changes to commit, skipping push."
+                fi
                 '''
             }
         }
