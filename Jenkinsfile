@@ -8,25 +8,6 @@ pipeline {
     }
 
     stages {
-        stage('Check skip ci') {
-            steps {
-                script {
-                    def commitAuthor = sh(script: 'git log -1 --pretty=%an',
-                    returnStdout: true).trim()
-
-                    def commitMsg = sh(script: 'git log -1 --pretty=%B',
-                    returnStdout: true).trim()
-
-                    echo "Commit Author: ${commitAuthor}"
-                    echo "Commit Message: ${commitMsg}"
-
-                    if (commitAuthor == 'Jenkins-CI' || commitMsg.contains('[skip ci]')) {
-                        currentBuild.result = 'NOT_BUILT'
-                        error("Skipping pipeline — commit made by Jenkins-CI")
-                    }
-                }
-            }
-        }
         stage("Checkout SCM") {
             steps {
                 checkout scm 
@@ -81,6 +62,10 @@ pipeline {
                 echo "Updating Kubernetes manifests with new image tag: ${IMAGE_TAG}"
                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                 sh '''
+                 # Get latest state from gitops branch
+                 git fetch origin
+                 git checkout gitops
+                 git pull origin gitops
                  # Update image tag in all deployment files
                  sed -i "s|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g" k8s/dev/deployment.yml
                  sed -i "s|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g" k8s/staging/deployment.yml
@@ -152,6 +137,9 @@ pipeline {
             if (env.BUILD_NUMBER.toInteger() > 1) {
                 withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh '''
+                        git fetch origin
+                        git checkout gitops
+                        git pull origin gitops
                         git config user.name "Jenkins CI"
                         git config user.email "jenkins-ci@local"
 
@@ -160,7 +148,7 @@ pipeline {
                             sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${PREVIOUS_IMAGE_TAG}|g" k8s/dev/deployment.yml
                             git add k8s/
                             git commit -m "Rollback to ${PREVIOUS_IMAGE_TAG} due to failed health check" || true
-                            git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
+                            git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
                             echo "✅ Rollback committed! ArgoCD will sync version ${PREVIOUS_IMAGE_TAG}"
                         else
                             echo "⚠️  Image tag not found in deployment.yml, skipping rollback"
