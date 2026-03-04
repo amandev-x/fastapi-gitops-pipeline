@@ -37,11 +37,11 @@ spec:
         imagePullPolicy: IfNotPresent 
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "400m"
+            memory: "150Mi"
+            cpu: "150m"
           limits:
-            memory: "1Gi"
-            cpu: "800m"
+            memory: "350Mi"
+            cpu: "350m"
         livenessProbe:
           httpGet:
             path: /health 
