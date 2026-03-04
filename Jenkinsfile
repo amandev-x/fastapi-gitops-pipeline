@@ -36,11 +36,14 @@ pipeline {
                 '''
             }
         }
-        stage("Build Docker Image") {
+        stage("Build Docker Image and load to kind cluster") {
             steps {
                 echo "Building docker image with tag: ${IMAGE_TAG}"
                 sh 'docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} .'
                 sh 'docker tag ${DOCKER_IMAGE}:${IMAGE_TAG} ${DOCKER_IMAGE}:latest'
+
+                echo "Loading image into kind cluster"
+                sh 'kind load docker-image ${DOCKER_IMAGE}:${IMAGE_TAG} --name gitops'
             }
         }
         stage("Push to Docker Hub") {
