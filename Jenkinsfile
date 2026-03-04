@@ -11,10 +11,10 @@ pipeline {
         stage('Check skip ci') {
             steps {
                 script {
-                    def commitAuthor = sh(script: git log -1 --preety=%an,
+                    def commitAuthor = sh(script: 'git log -1 --preety=%an',
                     returnStdout: true).trim()
 
-                    def commitMsg = sh(script: git log -1 --preety=%B,
+                    def commitMsg = sh(script: 'git log -1 --preety=%B',
                     returnStdout: true).trim()
 
                     echo "Commit Author: ${commitAuthor}"
