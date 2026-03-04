@@ -14,7 +14,7 @@ FAIL_HEALTH = os.environ.get("FAIL_HEALTH", "false").lower() == "true"
 @app.get("/")
 async def read_root():
     return {
-        "message": "Welcome to the FastAPI GitOps Pipeline Demo!",
+        "message": "Welcome to the FastAPI GitOps Pipeline Demo! Jenkins and ArgoCD webhook event are set successfull",
         "environment": ENVIRONMENT,
         "version": "1.0.0"
         }
