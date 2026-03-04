@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/amandev-x/fastapi-gitops-pipeline.git
-    targetRevision: main 
+    targetRevision: gitops 
     path: k8s/staging
   destination:
     server: https://kubernetes.default.svc
