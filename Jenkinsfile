@@ -73,7 +73,7 @@ pipeline {
                  sed -i "s|VERSION=.*|VERSION=${IMAGE_TAG}|g" k8s/prod/deployment.yml
 
                  # Commit and push changes
-                 git config user.name "Jenkins CI"
+                 git config user.name "Jenkins-CI"
                  git config user.email "jenkins-ci@local"
                  git add k8s/ 
                  # Check if there are actual changes before commiting
