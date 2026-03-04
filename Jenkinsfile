@@ -8,6 +8,25 @@ pipeline {
     }
 
     stages {
+        stage('Check skip ci') {
+            steps {
+                script {
+                    def commitAuthor = sh(script: git log -1 --preety=%an,
+                    returnStdout: true).trim()
+
+                    def commitMsg = sh(script: git log -1 --preety=%B,
+                    returnStdout: true).trim()
+
+                    echo "Commit Author: ${commitAuthor}"
+                    echo "Commit Message: ${commitMsg}"
+
+                    if (commitAuthor == 'Jenkins-CI' || commitMsg.contains('[skip ci]')) {
+                        currentBuild.result = 'NOT_BUILT'
+                        error("Skipping pipeline — commit made by Jenkins-CI")
+                    }
+                }
+            }
+        }
         stage("Checkout SCM") {
             steps {
                 checkout scm 
