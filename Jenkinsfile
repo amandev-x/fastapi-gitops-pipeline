@@ -99,7 +99,7 @@ pipeline {
                  if ! git diff --cached --quiet; then
                  echo "Changes detected, committing..."
                 git commit -m "Update image tag to ${IMAGE_TAG} [skip ci]"
-                git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:main
+                git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
                 else
                   echo "No changes to commit, skipping push."
                 fi
