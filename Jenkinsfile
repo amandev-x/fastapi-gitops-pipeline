@@ -57,62 +57,17 @@ pipeline {
                 }
             }
         }
-        stage("Updates K8s manifests") {
-            steps {
-                echo "Updating Kubernetes manifests with new image tag: ${IMAGE_TAG}"
-                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                sh '''
-                 # Get latest state from gitops branch
-                 git fetch origin
-                 git checkout gitops
-                 git pull origin gitops
-                 # Update image tag in all deployment files
-                 sed -i "s|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g" k8s/dev/deployment.yml
-                 sed -i "s|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g" k8s/staging/deployment.yml
-                 sed -i "s|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|g" k8s/prod/deployment.yml
-
-                 # Update VERSION env var
-                 sed -i "s|VERSION=.*|VERSION=${IMAGE_TAG}|g" k8s/dev/deployment.yml
-                 sed -i "s|VERSION=.*|VERSION=${IMAGE_TAG}|g" k8s/staging/deployment.yml
-                 sed -i "s|VERSION=.*|VERSION=${IMAGE_TAG}|g" k8s/prod/deployment.yml
-
-                 # Commit and push changes
-                 git config user.name "Jenkins-CI"
-                 git config user.email "jenkins-ci@local"
-                 git add k8s/ 
-                 # Check if there are actual changes before commiting
-                 if ! git diff --cached --quiet; then
-                 echo "Changes detected, committing..."
-                git commit -m "Update image tag to ${IMAGE_TAG} [skip ci]"
-                git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
-                else
-                  echo "No changes to commit, skipping push."
-                fi
-                '''
-            }
-        }
-        }
-        stage("Wait for ArgoCD sync") {
-            steps {
-                echo "Waiting for ArgoCD to sync"
-                sh "sleep 60"
-            }
-        }
-        stage("Health check") {
+        stage("Deploy and Promote") {
             steps {
                 script {
-                    echo "Checking deployment health..."
-                    def status = sh(
-                        script: "kubectl rollout status deployment/fastapi-app -n dev --timeout=90s",
-                        returnStatus: true
-                    )
+                    // 1. Deploy to DEV first
+                    deployToEnv("dev", IMAGE_TAG)
 
-                    if (status != 0) {
-                        echo "❌ Rollout failed or timed out!"
-                        error("Deployment unhealthy. The 'failure' block will now trigger rollback.")
-                    } else {
-                        echo "✅ SUCCESS: New version ${IMAGE_TAG} is live and healthy in Dev!"
-                    }
+                    // 2. Promote to staging if Dev env is healthy
+                    deployToEnv("staging", IMAGE_TAG)
+
+                    // 3. Promote to prod if Staging env is healthy
+                    deployToEnv("prod", IMAGE_TAG)
                 }
             }
         }
@@ -161,4 +116,42 @@ pipeline {
         }
     }
 }
+}
+
+// --- Helper Function for Promotion ---
+def deployToEnv(envName, tag) {
+    echo "🚀 Deploying version ${tag} to ${envName}..."
+    withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+        sh '''
+          git fetch origin
+          git checkout gitops
+          git pull origin gitops
+
+          # Update image and version for specific environment
+          sed -i "s|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${tag}|g" k8s/${envName}/deployment.yml
+          sed -i "s|VERSION=.*|VERSION=${tag}|g" k8s/${envName}/deployment.yml
+
+          git config user.name "Jenkins-CI"
+          git config user.email "jenkins-ci@local"
+          git add k8s/${envName}/
+
+          if ! git diff --cached --quiet; then
+                git commit -m "Promote ${tag} to ${envName} [skip ci]"
+                git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
+          fi
+        '''
+
+        echo "Waiting for ArgoCD to sync ${envName}..."
+        sleep 60 
+    
+        echo "Checking health of ${envName}..."
+        def status = sh(
+            script: "kubectl rollout status deployment/fastapi-app -n ${envName} --timeout=90s",
+            returnStatus: true
+        )
+    
+        if (status != 0) {
+            error("❌ ${envName} deployment failed! Stopping pipeline to protect next environments.")
+        }
+    }
 }
