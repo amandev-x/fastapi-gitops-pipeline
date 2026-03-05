@@ -147,7 +147,7 @@ def deployToEnv(envName, tag) {
                  git fetch origin
                  git checkout gitops
                  git pull origin gitops
-                 grep 'image:' k8s/dev/deployment.yml | awk -F: '{print \$3}'
+                 grep "image:" k8s/dev/deployment.yml | cut -d ":" -f3
               """,
               returnStdout: true
             ).trim()
