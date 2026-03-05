@@ -57,16 +57,30 @@ pipeline {
                 }
             }
         }
-        stage("Deploy and Promote") {
+        stage("Deploy to Dev") {
             steps {
                 script {
-                    // 1. Deploy to DEV first
                     deployToEnv("dev", IMAGE_TAG)
-
-                    // 2. Promote to staging if Dev env is healthy
+                }
+            }
+        }
+        stage("Deploy to Staging") {
+            steps {
+                script {
                     deployToEnv("staging", IMAGE_TAG)
-
-                    // 3. Promote to prod if Staging env is healthy
+                }
+            }
+        }
+        stage("Approve production deployment") {
+            steps {
+                timeout(time: 24, unit: 'HOURS') {
+                    input message: "✅ Dev & Staging passed. Deploy version ${IMAGE_TAG} to Production?", ok: "Deploy to Prod"
+                }
+            }
+        }
+        stage("Deploy to Prod") {
+            steps {
+                script {
                     deployToEnv("prod", IMAGE_TAG)
                 }
             }
