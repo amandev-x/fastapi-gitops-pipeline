@@ -99,7 +99,24 @@ pipeline {
         }
         success {
             echo "✅ Deployment successful! Version ${IMAGE_TAG} is healthy and running."
-        }
+            // Save last stable tag to gitops branch
+            withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                sh """
+                  git fetch origin
+                  git checkout gitops
+                  git pull origin gitops
+                  git config user.name "Jenkins-CI"
+                  git config user.email "jenkins-ci@local"
+
+                  # Save current successful build tag
+                  echo "${IMAGE_TAG}" > .last_stable_tag
+
+                  git add .last_stable_tag
+                  git commit -m "Save last stable tag: ${IMAGE_TAG} [skip ci]" || true
+                  git push https://\${GIT_USER}:\${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
+                """
+                }
+            }
         failure {
         script {
             echo "🔴 DEPLOYMENT FAILED! Initiating rollback..."
@@ -112,13 +129,29 @@ pipeline {
                         git config user.name "Jenkins CI"
                         git config user.email "jenkins-ci@local"
 
+                        # ✅ Read last stable tag from file — never points to a failed build
+                        if [ ! -f .last_stable_tag ]; then
+                        echo "⚠️  No stable tag found, skipping rollback"
+                        exit 0
+                        fi
+
+                        STABLE_TAG=\$(cat .last_stable_tag)
+                        echo "Last stable tag: \$STABLE_TAG"
+                        echo "Current failed tag: ${IMAGE_TAG}"
+
+                        # Don't rollback if stable tag is same as current
+                        if [ "\$STABLE_TAG" = "${IMAGE_TAG}" ]; then
+                          echo "⚠️  Stable tag is same as current, skipping rollback"
+                        exit 0
+                        fi
+
                         if grep -q "${DOCKER_IMAGE}:${IMAGE_TAG}" k8s/dev/deployment.yml; then
-                            echo "Reverting image from ${IMAGE_TAG} to ${LAST_DEPLOYED_TAG}"
-                            sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${LAST_DEPLOYED_TAG}|g" k8s/dev/deployment.yml
+                            echo "Reverting image from ${IMAGE_TAG} to ${STABLE_TAG}"
+                            sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${STABLE_TAG}|g" k8s/dev/deployment.yml
                             git add k8s/
-                            git commit -m "Rollback to ${LAST_DEPLOYED_TAG} due to failed health check" || true
+                            git commit -m "Rollback to ${STABLE_TAG} due to failed health check" || true
                             git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
-                            echo "✅ Rollback committed! ArgoCD will sync version ${LAST_DEPLOYED_TAG}"
+                            echo "✅ Rollback committed! ArgoCD will sync version ${STABLE_TAG}"
                         else
                             echo "⚠️  Image tag not found in deployment.yml, skipping rollback"
                         fi
@@ -136,16 +169,6 @@ pipeline {
 def deployToEnv(envName, tag) {
     echo "🚀 Deploying version ${tag} to ${envName}..."
     withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-        sh '''
-          git fetch origin
-          git checkout gitops
-          git pull origin gitops
-        '''
-        env.LAST_DEPLOYED_TAG = sh (
-            script: 'grep "image:" k8s/dev/deployment.yml | cut -d ":" -f3'
-        )
-        echo "📌 Last deployed tag was: ${env.LAST_DEPLOYED_TAG}"
-        
         sh """
           git fetch origin
           git checkout gitops
