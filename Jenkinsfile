@@ -122,7 +122,7 @@ pipeline {
 def deployToEnv(envName, tag) {
     echo "🚀 Deploying version ${tag} to ${envName}..."
     withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-        sh '''
+        sh """
           git fetch origin
           git checkout gitops
           git pull origin gitops
@@ -137,9 +137,9 @@ def deployToEnv(envName, tag) {
 
           if ! git diff --cached --quiet; then
                 git commit -m "Promote ${tag} to ${envName} [skip ci]"
-                git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
+                git push https://\${GIT_USER}:\${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
           fi
-        '''
+        """
 
         echo "Waiting for ArgoCD to sync ${envName}..."
         sleep 60 
