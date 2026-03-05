@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: fastapi-app
-          image: amandabral9954/fastapi-app:94
+          image: amandabral9954/fastapi-app:96
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
