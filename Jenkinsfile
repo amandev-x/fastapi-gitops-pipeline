@@ -156,7 +156,7 @@ def deployToEnv(envName, tag) {
         """
 
         echo "Waiting for ArgoCD to sync ${envName}..."
-        sleep 60 
+        sleep 20 
     
         echo "Checking health of ${envName}..."
         def status = sh(
