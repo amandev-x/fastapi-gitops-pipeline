@@ -143,12 +143,12 @@ def deployToEnv(envName, tag) {
 
           script {
             def lastTag = sh(
-              script: """
+              script: '''
                  git fetch origin
                  git checkout gitops
                  git pull origin gitops
                  grep "image:" k8s/dev/deployment.yml | cut -d ":" -f3
-              """,
+              ''',
               returnStdout: true
             ).trim()
             env.LAST_DEPLOYED_TAG = lastTag
