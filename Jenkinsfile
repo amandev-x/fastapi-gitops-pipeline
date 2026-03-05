@@ -113,12 +113,12 @@ pipeline {
                         git config user.email "jenkins-ci@local"
 
                         if grep -q "${DOCKER_IMAGE}:${IMAGE_TAG}" k8s/dev/deployment.yml; then
-                            echo "Reverting image from ${IMAGE_TAG} to ${PREVIOUS_IMAGE_TAG}"
-                            sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${PREVIOUS_IMAGE_TAG}|g" k8s/dev/deployment.yml
+                            echo "Reverting image from ${IMAGE_TAG} to ${LAST_DEPLOYED_TAG}"
+                            sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${LAST_DEPLOYED_TAG}|g" k8s/dev/deployment.yml
                             git add k8s/
-                            git commit -m "Rollback to ${PREVIOUS_IMAGE_TAG} due to failed health check" || true
+                            git commit -m "Rollback to ${LAST_DEPLOYED_TAG} due to failed health check" || true
                             git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
-                            echo "✅ Rollback committed! ArgoCD will sync version ${PREVIOUS_IMAGE_TAG}"
+                            echo "✅ Rollback committed! ArgoCD will sync version ${LAST_DEPLOYED_TAG}"
                         else
                             echo "⚠️  Image tag not found in deployment.yml, skipping rollback"
                         fi
@@ -141,6 +141,19 @@ def deployToEnv(envName, tag) {
           git checkout gitops
           git pull origin gitops
 
+          script {
+            def lastTag = sh(
+              script: """
+                 git fetch origin
+                 git checkout gitops
+                 git pull origin gitops
+                 grep 'image:' k8s/dev/deployment.yml | awk -F: '{print \$3}'
+              """,
+              returnStdout: true
+            ).trim()
+            env.LAST_DEPLOYED_TAG = lastTag
+            echo "📌 Last deployed tag was: ${env.LAST_DEPLOYED_TAG}"
+          }
           # Update image and version for specific environment
           sed -i "s|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${tag}|g" k8s/${envName}/deployment.yml
           sed -i "s|VERSION=.*|VERSION=${tag}|g" k8s/${envName}/deployment.yml
