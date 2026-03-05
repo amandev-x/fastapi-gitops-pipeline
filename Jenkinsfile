@@ -136,19 +136,15 @@ pipeline {
 def deployToEnv(envName, tag) {
     echo "🚀 Deploying version ${tag} to ${envName}..."
     withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-        script {
-            def lastTag = sh(
-              script: '''
-                 git fetch origin
-                 git checkout gitops
-                 git pull origin gitops
-                 grep "image:" k8s/dev/deployment.yml | cut -d ":" -f3
-              ''',
-              returnStdout: true
-            ).trim()
-            env.LAST_DEPLOYED_TAG = lastTag
-            echo "📌 Last deployed tag was: ${env.LAST_DEPLOYED_TAG}"
-          }
+        sh '''
+          git fetch origin
+          git checkout gitops
+          git pull origin gitops
+        '''
+        env.LAST_DEPLOYED_TAG = sh (
+            script: 'grep "image:" k8s/dev/deployment.yml | cut -d ":" -f3'
+        )
+        echo "📌 Last deployed tag was: ${env.LAST_DEPLOYED_TAG}"
         
         sh """
           git fetch origin
