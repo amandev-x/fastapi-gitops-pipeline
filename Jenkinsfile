@@ -123,6 +123,7 @@ pipeline {
             }
         }
     }
+}
 
 // --- Helper Function for Promotion ---
 def deployToEnv(envName, tag) {
@@ -204,5 +205,4 @@ def rollBack(envName) {
                 echo "⚠️  No previous version available to rollback"
           """
     }
-}
 }
