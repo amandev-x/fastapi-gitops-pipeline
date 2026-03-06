@@ -79,11 +79,11 @@ The pipeline follows a Staged Promotion strategy, ensuring that only verified, h
 
 ### 1. Continuous Integration (CI)
 
-- Testing: Runs pytest on the application code within a virtual environment.
+- **Testing**: Runs pytest on the application code within a virtual environment.
 
-- Build: Generates a Docker image tagged with the unique ${BUILD_NUMBER}.
+- **Build**: Generates a Docker image tagged with the unique ${BUILD_NUMBER} and loads it into the kind cluster.
 
-- Push: Pushes the immutable image to Docker Hub and loads it into the local Kind cluster.
+- **Push**: Only pushes to DockerHub **after Dev health check passes** — broken images never reach DockerHub.
 
 ### 2. Continuous Deployment (CD) & GitOps
 
@@ -107,14 +107,13 @@ The pipeline follows a Staged Promotion strategy, ensuring that only verified, h
 
 ## 🚦 How to Run
 
-### I have build this project on ec2 instance so i'll be showing steps how to set in ec2. Make sure you have already running a ec2 instance. I have used m71-flex-large instance as i was facing issue to set my repo with argocd server and it was keep getting failed for most of the time.
+### I have build this project on ec2 instance so i'll be showing steps how to set in ec2. Make sure you have already running a ec2 instance. I have used m7i-flex-large instance as i was facing issue to set my repo with argocd server and it was keep getting failed for most of the time.
 
 ### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/amandev-x/fastapi-gitops-pipeline.git
 cd fastapi-gitops-pipeline
-
 ```
 
 ### 2. Create a Kind Cluster
@@ -123,28 +122,22 @@ cd fastapi-gitops-pipeline
 kind create cluster --name gitops --config gitops.yml
 ```
 
-### 3. Add Argo helm repo and create argocd namespace and use Helm to install ArgoCD
-
-```bash
-helm repo add argo https://argoproj.github.io/argo-helm
-helm repo update
-```
-
-### 4. Create argocd namespace and use Helm to install ArgoCD
+### 3. Create argocd namespace and use Helm to add, update and install ArgoCD
 
 ```bash
 kubectl create namespace argocd
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
 helm install argocd argo/argo-cd -n argocd
 ```
-
-### 5. Verify Installation
+### 4. Verify Installation
 
 ```bash
 kubectl get all -n argocd
 kubectl get svc -n argocd
 ```
 
-### 6. Wait for ArgoCD to be ready
+### 5. Wait for ArgoCD to be ready
 
 ``` bash
 kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=120s
@@ -182,7 +175,7 @@ kubectl create namespace prod
 
 ```bash
 cp $HOME/.kube/config ~/.kube/config-jenkins
-sed -i 's/127.0.0.1/<control-node-name>:6443/g' ~/.kube/config-jenkins
+sed -i 's/127.0.0.1:<port>/<control-node-name>:6443/g' ~/.kube/config-jenkins
 ```
 
 ### 10. Create a Jenkins Docker container
