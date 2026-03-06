@@ -46,21 +46,20 @@ pipeline {
                 sh 'kind load docker-image ${DOCKER_IMAGE}:${IMAGE_TAG} --name gitops'
             }
         }
-        stage("Push to Docker Hub") {
-            steps {
-                echo "Pushing docker image with tag: ${IMAGE_TAG}"
-                script {
-                    docker.withRegistry('', 'dockerhub-credentials') {
-                        sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
-                        sh "docker push ${DOCKER_IMAGE}:latest"
-                    }
-                }
-            }
-        }
         stage("Deploy to Dev") {
             steps {
                 script {
                     deployToEnv("dev", IMAGE_TAG)
+                }
+            }
+        }
+        stage("Push to Dockerhub") {
+            steps {
+                echo "✅ Dev passed! Pushing verified image to DockerHub..."
+                script {
+                    docker.withRegistry('', 'dockerhub-credentials') {
+                        sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                    }
                 }
             }
         }
@@ -99,6 +98,12 @@ pipeline {
         }
         success {
             echo "✅ Deployment successful! Version ${IMAGE_TAG} is healthy and running."
+            echo "✅ All environments healthy! Promoting ${IMAGE_TAG} to latest..."
+            script {
+                docker.withRegistry('', 'dockerhub-credentials') {
+                    sh "docker push ${DOCKER_IMAGE}:latest"
+                }
+            }
             // Save last stable tag to gitops branch
             withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                 sh """
