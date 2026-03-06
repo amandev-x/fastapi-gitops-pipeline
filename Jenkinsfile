@@ -192,12 +192,12 @@ def rollBack(envName) {
             fi
 
             if grep -q "${DOCKER_IMAGE}:${IMAGE_TAG}" k8s/${envName}/deployment.yml; then
-                echo "Reverting image from ${IMAGE_TAG} to ${STABLE_TAG}"
-                sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${STABLE_TAG}|g" k8s/${envName}/deployment.yml
+                echo "Reverting image from ${IMAGE_TAG} to \${STABLE_TAG}"
+                sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:\${STABLE_TAG}|g" k8s/${envName}/deployment.yml
                 git add k8s/
-                git commit -m "Rollback to ${STABLE_TAG} due to failed health check" || true
+                git commit -m "Rollback to \${STABLE_TAG} due to failed health check" || true
                 git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
-                echo "✅ ${envName} Rollback committed! ArgoCD will sync version ${STABLE_TAG}"
+                echo "✅ ${envName} Rollback committed! ArgoCD will sync version \${STABLE_TAG}"
                 else
                     echo "⚠️  Image tag not found in deployment.yml, skipping rollback"
                     fi
