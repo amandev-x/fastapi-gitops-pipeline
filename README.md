@@ -8,8 +8,7 @@ A production-grade CI/CD pipeline implementing GitOps principles to deploy a Fas
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-Kind-326CE5)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688)
 
-<img src="./images/Python.svg" width="80" height="80" alt="Python"/>
-<img src="./images/FastAPI.svg" width="80" height="80" alt="FastAPI"/>
+<img src="./images/Python.svg" width="80" height="80" alt="Python"/> <img src="./images/FastAPI.svg" width="80" height="80" alt="FastAPI"/>
 <img src="./images/Docker.svg" width="80" height="80" alt="Docker"/>
 <img src="./images/Kubernetes.svg" width="80" height="80" alt="Kubernetes"/>
 <img src="./images/Jenkins.svg" width="80" height="80" alt="Jenkins"/>
