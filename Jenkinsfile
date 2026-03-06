@@ -120,50 +120,9 @@ pipeline {
         failure {
         script {
             echo "🔴 DEPLOYMENT FAILED! Initiating rollback..."
-            if (env.BUILD_NUMBER.toInteger() > 1) {
-                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                    sh '''
-                        git fetch origin
-                        git checkout gitops
-                        git pull origin gitops
-                        git config user.name "Jenkins CI"
-                        git config user.email "jenkins-ci@local"
-
-                        # ✅ Read last stable tag from file — never points to a failed build
-                        if [ ! -f .last_stable_tag ]; then
-                        echo "⚠️  No stable tag found, skipping rollback"
-                        exit 0
-                        fi
-
-                        STABLE_TAG=\$(cat .last_stable_tag)
-                        echo "Last stable tag: \$STABLE_TAG"
-                        echo "Current failed tag: ${IMAGE_TAG}"
-
-                        # Don't rollback if stable tag is same as current
-                        if [ "\$STABLE_TAG" = "${IMAGE_TAG}" ]; then
-                          echo "⚠️  Stable tag is same as current, skipping rollback"
-                        exit 0
-                        fi
-
-                        if grep -q "${DOCKER_IMAGE}:${IMAGE_TAG}" k8s/dev/deployment.yml; then
-                            echo "Reverting image from ${IMAGE_TAG} to ${STABLE_TAG}"
-                            sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${STABLE_TAG}|g" k8s/dev/deployment.yml
-                            git add k8s/
-                            git commit -m "Rollback to ${STABLE_TAG} due to failed health check" || true
-                            git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
-                            echo "✅ Rollback committed! ArgoCD will sync version ${STABLE_TAG}"
-                        else
-                            echo "⚠️  Image tag not found in deployment.yml, skipping rollback"
-                        fi
-                    '''
-                }
-            } else {
-                echo "⚠️  No previous version available to rollback to (this is build #1)"
             }
         }
     }
-}
-}
 
 // --- Helper Function for Promotion ---
 def deployToEnv(envName, tag) {
@@ -198,7 +157,52 @@ def deployToEnv(envName, tag) {
         )
     
         if (status != 0) {
+            rollBack(envName)
             error("❌ ${envName} deployment failed! Stopping pipeline to protect next environments.")
         }
+        echo "✅ ${envName} is healthy!"
     }
+}
+
+def rollBack(envName) {
+    echo "🔴 Rolling back ${envName}..."
+    withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+        sh """
+          git fetch origin
+          git checkout gitops
+          git pull origin gitops
+          git config user.name "Jenkins-CI"
+          git config user.email "jenkins-ci@local"
+
+          # ✅ Read last stable tag from file — never points to a failed build
+            if [ ! -f .last_stable_tag ]; then
+            echo "⚠️  No stable tag found, skipping rollback"
+            exit 0
+            fi
+
+            STABLE_TAG=\$(cat .last_stable_tag)
+            echo "Last stable tag: \$STABLE_TAG"
+            echo "Current failed tag: ${IMAGE_TAG}"
+
+            # Don't rollback if stable tag is same as current
+            if [ "\$STABLE_TAG" = "${IMAGE_TAG}" ]; then
+            echo "⚠️  Stable tag is same as current, skipping rollback"
+            exit 0
+            fi
+
+            if grep -q "${DOCKER_IMAGE}:${IMAGE_TAG}" k8s/${envName}/deployment.yml; then
+                echo "Reverting image from ${IMAGE_TAG} to ${STABLE_TAG}"
+                sed -i "s|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|image: ${DOCKER_IMAGE}:${STABLE_TAG}|g" k8s/${envName}/deployment.yml
+                git add k8s/
+                git commit -m "Rollback to ${STABLE_TAG} due to failed health check" || true
+                git push https://${GIT_USER}:${GIT_PASS}@github.com/amandev-x/fastapi-gitops-pipeline.git HEAD:gitops
+                echo "✅ ${envName} Rollback committed! ArgoCD will sync version ${STABLE_TAG}"
+                else
+                    echo "⚠️  Image tag not found in deployment.yml, skipping rollback"
+                    fi
+            else
+                echo "⚠️  No previous version available to rollback"
+          """
+    }
+}
 }
