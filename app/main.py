@@ -12,7 +12,7 @@ VERSION = os.environ.get("VERSION", "1.0.0")
 FAIL_HEALTH = os.environ.get("FAIL_HEALTH", "false").lower() == "true"
 
 # --- THE SABOTAGE CODE ---
-#@app.on_event("startup")
+@app.on_event("startup")
 async def startup_event():
  print("Checking system health...")
  raise Exception("CRITICAL_FAILURE: Simulated production crash for GitOps Rollback test")
